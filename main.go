@@ -11,11 +11,19 @@ func main() {
 	const port = "8080"
 
 	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.Dir(filepathRoot)))
+	mux.Handle("/app/", http.StripPrefix("/app/", http.FileServer(http.Dir(filepathRoot))))
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
 	server := http.Server{
 		Addr:    ":" + port,
 		Handler: mux,
 	}
+
 	fmt.Printf("Serving files from %v on port: %v\n", filepathRoot, port)
 	log.Fatal(server.ListenAndServe())
 }
