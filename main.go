@@ -7,6 +7,12 @@ import (
 	"sync/atomic"
 )
 
+// Struct for holding stateful server data
+
+type apiConfig struct {
+	fileserverHits atomic.Int32
+}
+
 func main() {
 	const filepathRoot = "."
 	const port = "8080"
@@ -27,15 +33,15 @@ func main() {
 	log.Fatal(server.ListenAndServe())
 }
 
+// Readiness end point for the server
+
 func handlerReadiness(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	w.Write([]byte(http.StatusText(http.StatusOK)))
 }
 
-type apiConfig struct {
-	fileserverHits atomic.Int32
-}
+// Middleware to increment server hits on being handled
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -44,19 +50,15 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 	})
 }
 
-func (cfg *apiConfig) middlewareMetricsReset(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		cfg.fileserverHits.Store(0)
-		next.ServeHTTP(w, req)
-	})
-}
+// Method to reset server hits
 
 func (cfg *apiConfig) hitsResetHandler(w http.ResponseWriter, req *http.Request) {
-	w.Header().Add("Content-Type", "test/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
 	cfg.fileserverHits.Store(0)
-	w.Write([]byte("Server hits reset\n"))
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Server hits reset to 0\n"))
 }
+
+// Method to print server hits
 
 func (cfg *apiConfig) hitsLoggerHandler(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
