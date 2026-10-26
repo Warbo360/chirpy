@@ -1,0 +1,13 @@
+package main
+
+import (
+	"net/http"
+)
+
+// Readiness end point for the server
+
+func handlerReadiness(w http.ResponseWriter, req *http.Request) {
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(http.StatusText(http.StatusOK)))
+}
