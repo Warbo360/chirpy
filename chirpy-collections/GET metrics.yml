@@ -1,14 +1,11 @@
 info:
-  name: bruno demo
+  name: GET metrics
   type: http
-  seq: 2
+  seq: 1
 
 http:
-  method: POST
-  url: https://httpbingo.org/post
-  body:
-    type: json
-    data: '{"hello": "bruno"}'
+  method: GET
+  url: "{{baseUrl}}/admin/metrics"
   auth: inherit
 
 settings:

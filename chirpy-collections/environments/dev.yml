@@ -1,5 +1,5 @@
 name: dev
 variables:
   - name: baseUrl
-    value: https://api.github.com
+    value: http://localhost:8080
     description: ""
