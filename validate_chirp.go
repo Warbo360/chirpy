@@ -14,7 +14,7 @@ type parameters struct {
 }
 
 type returnVals struct {
-	Valid bool `json:"valid"`
+	CleanedBody string `json:"cleaned_body"`
 }
 
 func handlerChirpValidate(w http.ResponseWriter, req *http.Request) {
@@ -31,7 +31,8 @@ func handlerChirpValidate(w http.ResponseWriter, req *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Chirp is too long", nil)
 		return
 	}
-	respondWithJSON(w, http.StatusOK, returnVals{Valid: true})
+	params.Body = chirpSanitize(params.Body)
+	respondWithJSON(w, http.StatusOK, returnVals{CleanedBody: params.Body})
 }
 
 func chirpSanitize(chirp string) string {
