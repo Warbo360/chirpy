@@ -3,7 +3,11 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"slices"
+	"strings"
 )
+
+var profanes = []string{"kerfuffle", "sharbert", "fornax"}
 
 type parameters struct {
 	Body string `json:"body"`
@@ -28,4 +32,15 @@ func handlerChirpValidate(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	respondWithJSON(w, http.StatusOK, returnVals{Valid: true})
+}
+
+func chirpSanitize(chirp string) string {
+	sChirp := strings.Split(chirp, " ")
+	for i, sub := range sChirp {
+		if slices.Contains(profanes, strings.ToLower(sub)) {
+			sChirp[i] = "****"
+		}
+	}
+	chirp = strings.Join(sChirp, " ")
+	return chirp
 }
