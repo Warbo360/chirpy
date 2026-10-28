@@ -12,15 +12,13 @@ var profanes = map[string]struct{}{
 	"fornax":    {},
 }
 
-type parameters struct {
-	Body string `json:"body"`
-}
-
-type returnVals struct {
-	CleanedBody string `json:"cleaned_body"`
-}
-
 func handlerChirpValidate(w http.ResponseWriter, req *http.Request) {
+	type parameters struct {
+		Body string `json:"body"`
+	}
+	type returnVals struct {
+		CleanedBody string `json:"cleaned_body"`
+	}
 	decoder := json.NewDecoder(req.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
