@@ -3,11 +3,14 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"slices"
 	"strings"
 )
 
-var profanes = []string{"kerfuffle", "sharbert", "fornax"}
+var profanes = map[string]struct{}{
+	"kerfuffle": {},
+	"sharbert":  {},
+	"fornax":    {},
+}
 
 type parameters struct {
 	Body string `json:"body"`
@@ -31,17 +34,18 @@ func handlerChirpValidate(w http.ResponseWriter, req *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Chirp is too long", nil)
 		return
 	}
-	params.Body = chirpSanitize(params.Body)
-	respondWithJSON(w, http.StatusOK, returnVals{CleanedBody: params.Body})
+	cleaned := chirpSanitize(params.Body)
+	respondWithJSON(w, http.StatusOK, returnVals{CleanedBody: cleaned})
 }
 
-func chirpSanitize(chirp string) string {
-	sChirp := strings.Split(chirp, " ")
-	for i, sub := range sChirp {
-		if slices.Contains(profanes, strings.ToLower(sub)) {
-			sChirp[i] = "****"
+func chirpSanitize(body string) string {
+	words := strings.Split(body, " ")
+	for i, word := range words {
+		loweredWord := strings.ToLower(word)
+		if _, ok := profanes[loweredWord]; ok {
+			words[i] = "****"
 		}
 	}
-	chirp = strings.Join(sChirp, " ")
-	return chirp
+	cleaned := strings.Join(words, " ")
+	return cleaned
 }
