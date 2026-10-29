@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"net/http"
 )
 
 // Method to reset server hits
 
 func (cfg *apiConfig) hitsResetHandler(w http.ResponseWriter, req *http.Request) {
-	cfg.fileserverHits.Store(0)
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Server hits reset to 0\n"))
+	err := cfg.db.ResetUsers(context.Background())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failure to reset \"users\" table", err)
+		return
+	}
+	respondWithJSON(w, http.StatusOK, "Users table reset successfully")
 }
