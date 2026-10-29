@@ -1,0 +1,23 @@
+info:
+  name: Chirp After Creating A User
+  type: http
+  seq: 11
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/chirps"
+  body:
+    type: json
+    data: |-
+      {
+        "body": "If you're committed enough, you can make any story work",
+        "user_id": "{{user_id}}"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,34 @@
+info:
+  name: Create User Into Post Chirp
+  type: http
+  seq: 10
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/users"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "saul@bettercall.com"
+      }
+  auth: inherit
+
+runtime:
+  actions:
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.id
+        method: jsonq
+      variable:
+        name: user_id
+        scope: runtime
+      description: user_id created by database and fed back into the http response
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
