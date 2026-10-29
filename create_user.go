@@ -15,14 +15,17 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request
 	err := decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error decoding parameters", err)
+		return
 	}
 
 	if params.Email == "" {
 		respondWithError(w, http.StatusBadRequest, "No email provided", nil)
+		return
 	}
 	dbusr, err := cfg.db.CreateUser(context.Background(), params.Email)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failure creating user into database", err)
+		respondWithError(w, http.StatusConflict, "failure creating user into database", err)
+		return
 	}
 	usr := User{
 		ID:        dbusr.ID,
