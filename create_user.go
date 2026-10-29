@@ -24,7 +24,7 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request
 	}
 	dbusr, err := cfg.db.CreateUser(context.Background(), params.Email)
 	if err != nil {
-		respondWithError(w, http.StatusConflict, "failure creating user into database", err)
+		respondWithError(w, http.StatusInternalServerError, "failure creating user into database", err)
 		return
 	}
 	usr := User{
