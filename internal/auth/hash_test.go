@@ -2,8 +2,10 @@ package auth_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/Warbo360/chirpy/internal/auth"
+	"github.com/google/uuid"
 )
 
 // Tests proper hash generation and passing password verification.
@@ -57,3 +59,29 @@ func TestMismatchHashPassword(t *testing.T) {
 		t.Fatal("expected matching password to be false, got true")
 	}
 }
+
+// Test for token generation from UserID and secret string
+
+func TestMakeJWT(t *testing.T) {
+	expiryDelta := time.Minute * 30
+	userID := uuid.New()
+
+	// Test no error during token string generation
+
+	tokenString, err := auth.MakeJWT(userID, "tokenSecret", expiryDelta)
+	if err != nil {
+		t.Fatalf("expected no error during tokenString generation, got %v", err)
+	}
+
+	// Test no error during jwt.Token gen from ValidateJWT
+
+	regenUserID, err := auth.ValidateJWT(tokenString, "tokenSecret")
+	if err != nil {
+		t.Fatalf("expected no error during token validation, got %v", err)
+	}
+	if userID != regenUserID {
+		t.Fatalf("expected validated UserID to match, wanted: %v, got: %v", userID, regenUserID)
+	}
+}
+
+// Test for invalid token
