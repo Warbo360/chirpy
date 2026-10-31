@@ -2,12 +2,19 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/alexedwards/argon2id"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+)
+
+type TokenType string
+
+const (
+	TokenTypeAccess TokenType = "chirpy-access"
 )
 
 func HashPassword(password string) (string, error) {
@@ -28,9 +35,9 @@ func CheckPasswordHash(password, hash string) (bool, error) {
 
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Issuer:    "chirpy-access",
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
+		Issuer:    string(TokenTypeAccess),
+		IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
 		Subject:   userID.String(),
 	})
 	tokenString, err := token.SignedString([]byte(tokenSecret))
@@ -41,8 +48,13 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 }
 
 func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
-	claims := &jwt.RegisteredClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
+	// Claims struct to get payload as into the token
+
+	claims := jwt.RegisteredClaims{}
+
+	// Parses token string with pointer to claims type, callback checks for proper signing method
+
+	token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
@@ -51,11 +63,27 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	if err != nil {
 		return uuid.Nil, err
 	}
-	subject, err := token.Claims.GetSubject()
+
+	// Access issuer field from the token and see if it matches access issuer
+
+	issuer, err := token.Claims.GetIssuer()
 	if err != nil {
 		return uuid.Nil, err
 	}
-	parsedUUID, err := uuid.Parse(subject)
+	if issuer != string(TokenTypeAccess) {
+		return uuid.Nil, errors.New("invalid issuer")
+	}
+
+	// Extracts UserID from subject field in the token
+
+	userID, err := token.Claims.GetSubject()
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	// Parses UserID string into a UUID type and returns it
+
+	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return uuid.Nil, err
 	}
