@@ -4,11 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+
+	"github.com/Warbo360/chirpy/internal/auth"
+	"github.com/Warbo360/chirpy/internal/database"
 )
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request) {
 	type parameters struct {
-		Email string `json:"email"`
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 	decoder := json.NewDecoder(req.Body)
 	params := parameters{}
@@ -22,7 +26,16 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request
 		respondWithError(w, http.StatusBadRequest, "No email provided", nil)
 		return
 	}
-	dbusr, err := cfg.db.CreateUser(context.Background(), params.Email)
+	hash, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error hashing password", err)
+		return
+	}
+	params.Password = hash
+	dbusr, err := cfg.db.CreateUser(context.Background(), database.CreateUserParams{
+		Email:          params.Email,
+		HashedPassword: params.Password,
+	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failure creating user into database", err)
 		return
