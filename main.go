@@ -19,6 +19,7 @@ type apiConfig struct {
 	fileserverHits atomic.Int32
 	db             *database.Queries
 	platform       string
+	secret         string
 }
 
 func main() {
@@ -27,12 +28,16 @@ func main() {
 
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
+	scrt := os.Getenv("SECRET")
 	if dbURL == "" {
 		log.Fatal("DB_URL must be set")
 	}
 	pltfrm := os.Getenv("PLATFORM")
 	if pltfrm == "" {
 		log.Fatal("PLATFORM must be set")
+	}
+	if scrt == "" {
+		log.Fatal("SECRET must be set")
 	}
 	dbConn, err := sql.Open("postgres", dbURL)
 	if err != nil {
@@ -44,6 +49,7 @@ func main() {
 		fileserverHits: atomic.Int32{},
 		db:             dbQueries,
 		platform:       pltfrm,
+		secret:         scrt,
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/app/", http.StripPrefix("/app", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(filepathRoot)))))

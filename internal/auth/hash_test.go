@@ -1,6 +1,7 @@
 package auth_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -124,7 +125,53 @@ func TestMakeJWT(t *testing.T) {
 				t.Fatalf("ValidateJWT() error = %v, wantErr = %v", err, tt.wantErr)
 			}
 			if gotUserID != tt.wantUserID {
-				t.Fatalf("ValidateJWT() gotUserID = %v, want %v", userID, tt.wantUserID)
+				t.Fatalf("ValidateJWT() gotUserID = %v, want %v", gotUserID, tt.wantUserID)
+			}
+		})
+	}
+}
+
+func TestBearerToken(t *testing.T) {
+	header := make(http.Header)
+	badHeader := make(http.Header)
+	token, _ := auth.MakeJWT(uuid.New(), "secret", time.Hour)
+	header.Set("Authorization", "Bearer "+token)
+	badHeader.Add("Authorization", token)
+
+	tests := []struct {
+		name            string
+		testHeader      http.Header
+		wantTokenString string
+		wantErr         bool
+	}{
+		{
+			name:            "ValidHeader",
+			testHeader:      header,
+			wantTokenString: token,
+			wantErr:         false,
+		},
+		{
+			name:            "InvalidHeader",
+			testHeader:      make(http.Header),
+			wantTokenString: "",
+			wantErr:         true,
+		},
+		{
+			name:            "InvalidAuthFormat",
+			testHeader:      badHeader,
+			wantTokenString: "",
+			wantErr:         true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotToken, err := auth.GetBearerToken(tt.testHeader)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("GetBearerToken error got: %v, want: %v\n", err, tt.wantErr)
+			}
+			if gotToken != tt.wantTokenString {
+				t.Fatalf("GetBearerToken gotToken: %v, want: %v\n", gotToken, tt.wantTokenString)
 			}
 		})
 	}

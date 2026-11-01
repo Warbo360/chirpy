@@ -12,8 +12,9 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 	// parameters struct to decode as for query
 
 	type parameters struct {
-		Password string `json:"password"`
-		Email    string `json:"email"`
+		Password         string `json:"password"`
+		Email            string `json:"email"`
+		ExpiresInSeconds int    `json:"expires_in_seconds"`
 	}
 
 	// Decode request body into above struct
@@ -36,6 +37,10 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 	if params.Password == "" {
 		respondWithError(w, http.StatusBadRequest, "no password provided", nil)
 		return
+	}
+
+	if params.ExpiresInSeconds == 0 {
+		params.ExpiresInSeconds = 3600
 	}
 
 	// Get user by email from database

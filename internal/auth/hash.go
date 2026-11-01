@@ -4,6 +4,8 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/alexedwards/argon2id"
@@ -88,4 +90,23 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 		return uuid.Nil, err
 	}
 	return parsedUUID, nil
+}
+
+func GetBearerToken(headers http.Header) (string, error) {
+	// Extract Authorization header from http.Header if it exists
+
+	auth := headers.Get("Authorization")
+	if auth == "" {
+		return "", errors.New("no Authorization header")
+	}
+
+	// Split at whitespace once, if in the <BEARER TOKEN_STRING> format will give a length of 2, verification of both
+	// fact as well
+
+	splitHeader := strings.Fields(auth)
+	if len(splitHeader) != 2 || !strings.EqualFold(splitHeader[0], "Bearer") {
+		return "", errors.New("unrecognized authorization header format")
+	}
+
+	return splitHeader[1], nil
 }
