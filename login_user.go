@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/Warbo360/chirpy/internal/auth"
 )
@@ -15,6 +16,13 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 		Password         string `json:"password"`
 		Email            string `json:"email"`
 		ExpiresInSeconds int    `json:"expires_in_seconds"`
+	}
+
+	// New response type since User type does not cover JWT tokens here
+
+	type returnVal struct {
+		User
+		Token string `json:"token"`
 	}
 
 	// Decode request body into above struct
@@ -37,10 +45,6 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 	if params.Password == "" {
 		respondWithError(w, http.StatusBadRequest, "no password provided", nil)
 		return
-	}
-
-	if params.ExpiresInSeconds == 0 {
-		params.ExpiresInSeconds = 3600
 	}
 
 	// Get user by email from database
@@ -66,12 +70,27 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	// Default to 1 hour expiry if parameter not passed or parameter passed is > than 1 hr
+
+	if params.ExpiresInSeconds == 0 || params.ExpiresInSeconds > 3600 {
+		params.ExpiresInSeconds = 3600
+	}
+
+	tokenNew, err := auth.MakeJWT(dbUser.ID, cfg.secret, time.Duration(params.ExpiresInSeconds))
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error during token generation", err)
+		return
+	}
+
 	// If password does match respond with User db fields minus password
 
-	respondWithJSON(w, http.StatusOK, User{
-		ID:        dbUser.ID,
-		CreatedAt: dbUser.CreatedAt,
-		UpdatedAt: dbUser.UpdatedAt,
-		Email:     dbUser.Email,
+	respondWithJSON(w, http.StatusOK, returnVal{
+		User: User{
+			ID:        dbUser.ID,
+			CreatedAt: dbUser.CreatedAt,
+			UpdatedAt: dbUser.UpdatedAt,
+			Email:     dbUser.Email,
+		},
+		Token: tokenNew,
 	})
 }
