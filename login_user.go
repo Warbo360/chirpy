@@ -7,22 +7,23 @@ import (
 	"time"
 
 	"github.com/Warbo360/chirpy/internal/auth"
+	"github.com/Warbo360/chirpy/internal/database"
 )
 
 func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request) {
 	// parameters struct to decode as for query
 
 	type parameters struct {
-		Password         string `json:"password"`
-		Email            string `json:"email"`
-		ExpiresInSeconds int    `json:"expires_in_seconds"`
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 
 	// New response type since User type does not cover JWT tokens here
 
 	type returnVal struct {
 		User
-		Token string `json:"token"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	// Decode request body into above struct
@@ -70,15 +71,21 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	// Default to 1 hour expiry if parameter not passed or parameter passed is > than 1 hr
-
-	if params.ExpiresInSeconds == 0 || params.ExpiresInSeconds > 3600 {
-		params.ExpiresInSeconds = 3600
-	}
-
-	tokenNew, err := auth.MakeJWT(dbUser.ID, cfg.secret, time.Duration(params.ExpiresInSeconds)*time.Second)
+	accessTokenNew, err := auth.MakeJWT(dbUser.ID, cfg.secret, time.Duration(3600)*time.Second)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "error during token generation", err)
+		return
+	}
+
+	// Refresh Token Generation and insert into the database
+
+	refreshTokenString := auth.MakeRefreshToken()
+	refreshTokenNew, err := cfg.db.CreateRefreshToken(context.Background(), database.CreateRefreshTokenParams{
+		Token:  refreshTokenString,
+		UserID: dbUser.ID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error creating refresh token", err)
 		return
 	}
 
@@ -91,6 +98,7 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 			UpdatedAt: dbUser.UpdatedAt,
 			Email:     dbUser.Email,
 		},
-		Token: tokenNew,
+		Token:        accessTokenNew,
+		RefreshToken: refreshTokenNew.Token,
 	})
 }
