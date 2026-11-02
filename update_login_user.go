@@ -70,9 +70,10 @@ func (cfg *apiConfig) handlerUpdateUserLogin(w http.ResponseWriter, req *http.Re
 	// Respond with succesfull update with User struct
 
 	respondWithJSON(w, http.StatusOK, User{
-		ID:        dbUser.ID,
-		CreatedAt: dbUser.CreatedAt,
-		UpdatedAt: dbUser.UpdatedAt,
-		Email:     dbUser.Email,
+		ID:          dbUser.ID,
+		CreatedAt:   dbUser.CreatedAt,
+		UpdatedAt:   dbUser.UpdatedAt,
+		Email:       dbUser.Email,
+		IsChirpyRed: dbUser.IsRed,
 	})
 }

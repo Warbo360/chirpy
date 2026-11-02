@@ -41,10 +41,11 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request
 		return
 	}
 	usr := User{
-		ID:        dbusr.ID,
-		CreatedAt: dbusr.CreatedAt,
-		UpdatedAt: dbusr.UpdatedAt,
-		Email:     dbusr.Email,
+		ID:          dbusr.ID,
+		CreatedAt:   dbusr.CreatedAt,
+		UpdatedAt:   dbusr.UpdatedAt,
+		Email:       dbusr.Email,
+		IsChirpyRed: false,
 	}
 	respondWithJSON(w, http.StatusCreated, usr)
 }

@@ -44,7 +44,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 
 const getUser = `-- name: GetUser :one
 SELECT
-    id, created_at, updated_at, email, hashed_password
+    id, created_at, updated_at, email, hashed_password, is_red
 FROM
     users
 WHERE
@@ -60,6 +60,7 @@ func (q *Queries) GetUser(ctx context.Context, email string) (User, error) {
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPassword,
+		&i.IsRed,
 	)
 	return i, err
 }
@@ -67,7 +68,7 @@ func (q *Queries) GetUser(ctx context.Context, email string) (User, error) {
 const getUserFromRefreshToken = `-- name: GetUserFromRefreshToken :one
 
 SELECT
-    users.id, users.created_at, users.updated_at, users.email, users.hashed_password
+    users.id, users.created_at, users.updated_at, users.email, users.hashed_password, users.is_red
 FROM
     refresh_tokens
     INNER JOIN users ON users.id = refresh_tokens.user_id
@@ -84,6 +85,7 @@ func (q *Queries) GetUserFromRefreshToken(ctx context.Context, token string) (Us
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPassword,
+		&i.IsRed,
 	)
 	return i, err
 }
@@ -94,7 +96,7 @@ UPDATE users
 SET email = $1,
     hashed_password = $2
 WHERE id = $3
-RETURNING id, created_at, updated_at, email, hashed_password
+RETURNING id, created_at, updated_at, email, hashed_password, is_red
 `
 
 type UpdateUserEmailAndPasswordParams struct {
@@ -112,6 +114,19 @@ func (q *Queries) UpdateUserEmailAndPassword(ctx context.Context, arg UpdateUser
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPassword,
+		&i.IsRed,
 	)
 	return i, err
+}
+
+const updateUserIsRedToTrue = `-- name: UpdateUserIsRedToTrue :exec
+
+UPDATE users
+SET is_red = TRUE
+WHERE id = $1
+`
+
+func (q *Queries) UpdateUserIsRedToTrue(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, updateUserIsRedToTrue, id)
+	return err
 }
