@@ -6,25 +6,16 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/api/chirps"
+  headers:
+    - name: Authorization
+      value: Bearer {{token}}
   body:
     type: json
     data: |-
       {
-        "body": "If you're committed enough, you can make any story work",
-        "user_id": "{{user_id}}"
+        "body": "If you're committed enough, you can make any story work"
       }
   auth: inherit
-
-runtime:
-  actions:
-    - type: set-variable
-      phase: after-response
-      selector:
-        expression: ""
-        method: jsonq
-      variable:
-        name: chirp_id
-        scope: runtime
 
 settings:
   encodeUrl: true

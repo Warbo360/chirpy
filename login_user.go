@@ -71,7 +71,7 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	accessTokenNew, err := auth.MakeJWT(dbUser.ID, cfg.secret, time.Duration(3600)*time.Second)
+	accessTokenNew, err := auth.MakeJWT(dbUser.ID, cfg.secret, time.Duration(cfg.accessTokenTimeoutSecounds)*time.Second)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "error during token generation", err)
 		return

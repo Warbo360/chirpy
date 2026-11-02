@@ -16,10 +16,11 @@ import (
 // Struct for holding stateful server data
 
 type apiConfig struct {
-	fileserverHits atomic.Int32
-	db             *database.Queries
-	platform       string
-	secret         string
+	fileserverHits             atomic.Int32
+	db                         *database.Queries
+	platform                   string
+	secret                     string
+	accessTokenTimeoutSecounds int
 }
 
 func main() {
@@ -39,6 +40,7 @@ func main() {
 	if scrt == "" {
 		log.Fatal("SECRET must be set")
 	}
+
 	dbConn, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal("Failure connecting to postgres database")
@@ -46,10 +48,11 @@ func main() {
 	dbQueries := database.New(dbConn)
 
 	apiCfg := apiConfig{
-		fileserverHits: atomic.Int32{},
-		db:             dbQueries,
-		platform:       pltfrm,
-		secret:         scrt,
+		fileserverHits:             atomic.Int32{},
+		db:                         dbQueries,
+		platform:                   pltfrm,
+		secret:                     scrt,
+		accessTokenTimeoutSecounds: 3600,
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/app/", http.StripPrefix("/app", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(filepathRoot)))))
@@ -61,6 +64,8 @@ func main() {
 	mux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
 	mux.HandleFunc("GET /api/chirps/{id}", apiCfg.handlerGetChirp)
 	mux.HandleFunc("POST /api/login", apiCfg.handlerLoginUser)
+	mux.HandleFunc("POST /api/refresh", apiCfg.handlerGetRefresh)
+	mux.HandleFunc("POST /api/revoke", apiCfg.handlerRevokeRefreshToken)
 
 	server := http.Server{
 		Addr:    ":" + port,
