@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"sort"
 
 	"github.com/google/uuid"
 )
@@ -11,6 +12,14 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request)
 	// Check for an author_id in the request URL, if author ID exists parse as a user ID and get all chirps by user ID
 
 	authorID := req.URL.Query().Get("author_id")
+	sortOrder := req.URL.Query().Get("sort")
+	if sortOrder == "" {
+		sortOrder = "asc"
+	}
+	if sortOrder != "asc" && sortOrder != "desc" {
+		respondWithError(w, http.StatusBadRequest, "not supported sorting in query parameter", nil)
+		return
+	}
 	if authorID != "" {
 		parsedAuthorID, err := uuid.Parse(authorID)
 		if err != nil {
@@ -31,6 +40,11 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request)
 				Body:      chirp.Body,
 				UserID:    chirp.UserID,
 			})
+		}
+		if sortOrder == "asc" {
+			sort.Slice(chirps, func(i, j int) bool { return chirps[i].CreatedAt.Before(chirps[j].CreatedAt) })
+		} else {
+			sort.Slice(chirps, func(i, j int) bool { return chirps[i].CreatedAt.After(chirps[j].CreatedAt) })
 		}
 		respondWithJSON(w, http.StatusOK, chirps)
 		return
@@ -55,6 +69,11 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request)
 			Body:      chirp.Body,
 			UserID:    chirp.UserID,
 		})
+	}
+	if sortOrder == "asc" {
+		sort.Slice(chirps, func(i, j int) bool { return chirps[i].CreatedAt.Before(chirps[j].CreatedAt) })
+	} else {
+		sort.Slice(chirps, func(i, j int) bool { return chirps[i].CreatedAt.After(chirps[j].CreatedAt) })
 	}
 	respondWithJSON(w, http.StatusOK, chirps)
 }
