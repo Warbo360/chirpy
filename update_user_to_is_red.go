@@ -5,10 +5,24 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/Warbo360/chirpy/internal/auth"
 	"github.com/google/uuid"
 )
 
 func (cfg *apiConfig) handlerUpdateUserToIsRed(w http.ResponseWriter, req *http.Request) {
+	// Extract API key from request header and check to see if it matches config key
+
+	apiKey, err := auth.GetAPIKey(req.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "error extracting API key", err)
+		return
+	}
+
+	if cfg.polkaAPIKey != apiKey {
+		respondWithError(w, http.StatusUnauthorized, "API key is not authorized", err)
+		return
+	}
+
 	// Define parameters struct we expect in the request body
 
 	type parameters struct {
@@ -22,7 +36,7 @@ func (cfg *apiConfig) handlerUpdateUserToIsRed(w http.ResponseWriter, req *http.
 
 	decoder := json.NewDecoder(req.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "error decoding request JSON", err)
 		return

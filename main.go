@@ -21,6 +21,7 @@ type apiConfig struct {
 	platform                   string
 	secret                     string
 	accessTokenTimeoutSecounds int
+	polkaAPIKey                string
 }
 
 func main() {
@@ -29,16 +30,20 @@ func main() {
 
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
+	pltfrm := os.Getenv("PLATFORM")
 	scrt := os.Getenv("SECRET")
+	polkaLoadedKey := os.Getenv("POLKA_KEY")
 	if dbURL == "" {
 		log.Fatal("DB_URL must be set")
 	}
-	pltfrm := os.Getenv("PLATFORM")
 	if pltfrm == "" {
 		log.Fatal("PLATFORM must be set")
 	}
 	if scrt == "" {
 		log.Fatal("SECRET must be set")
+	}
+	if polkaLoadedKey == "" {
+		log.Fatal("POLKA_KEY must be set")
 	}
 
 	dbConn, err := sql.Open("postgres", dbURL)
@@ -53,6 +58,7 @@ func main() {
 		platform:                   pltfrm,
 		secret:                     scrt,
 		accessTokenTimeoutSecounds: 3600,
+		polkaAPIKey:                polkaLoadedKey,
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/app/", http.StripPrefix("/app", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(filepathRoot)))))

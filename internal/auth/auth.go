@@ -118,3 +118,19 @@ func MakeRefreshToken() string {
 	rand.Read(key)
 	return hex.EncodeToString(key)
 }
+
+// Functionally the same as GetBearerToken but looking for "ApiKey" instead
+
+func GetAPIKey(headers http.Header) (string, error) {
+	auth := headers.Get("Authorization")
+	if auth == "" {
+		return "", errors.New("no Authorization header")
+	}
+
+	splitAuthHeader := strings.Fields(auth)
+	if len(splitAuthHeader) != 2 || !strings.EqualFold(splitAuthHeader[0], "ApiKey") {
+		return "", errors.New("unrecognized Authorization header format for ApiKey")
+	}
+
+	return splitAuthHeader[1], nil
+}
